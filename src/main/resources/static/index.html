@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benchmark: Base de Datos vs Caché</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #1e293b;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 { margin-top: 0; font-size: 1.5rem; color: #38bdf8; }
+        p { color: #94a3b8; font-size: 0.95rem; }
+        .buttons { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease-in-out;
+        }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-db { background-color: #f97316; color: white; }
+        .btn-cache { background-color: #10b981; color: white; }
+        .btn-reset { background-color: #64748b; color: white; }
+        .card-result {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: left;
+            margin-top: 20px;
+        }
+        .metric-title { font-size: 0.85rem; text-transform: uppercase; color: #64748b; font-weight: bold; }
+        .time-badge {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #38bdf8;
+            margin: 5px 0 15px 0;
+        }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 6px; color: #cbd5e1; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Benchmark Spring Cache</h1>
+    <p>Acceso a 50,000 registros: Base de datos H2 vs Memoria Caché</p>
+
+    <div class="buttons">
+        <button class="btn-db" onclick="realizarConsulta('/sin-cache')">Consultar Sin Caché</button>
+        <button class="btn-cache" onclick="realizarConsulta('/con-cache')">Consultar Con Caché</button>
+        <button class="btn-reset" onclick="limpiarCache()">Limpiar Caché</button>
+    </div>
+
+    <div class="card-result" id="panel-resultado">
+        <div class="metric-title">Estado</div>
+        <p style="margin: 5px 0; color: #94a3b8;">Haz clic en un botón para iniciar una medición.</p>
+    </div>
+</div>
+
+<script>
+    const API_URL = 'http://localhost:8080/api/productos';
+
+    async function realizarConsulta(endpoint) {
+        const panel = document.getElementById('panel-resultado');
+        panel.innerHTML = `<p style="color: #38bdf8;">Ejecutando petición...</p>`;
+
+        try {
+            const startClient = performance.now();
+            const res = await fetch(`${API_URL}${endpoint}`);
+            if (!res.ok) throw new Error('Error al conectar con la API');
+            
+            const data = await res.json();
+            const endClient = performance.now();
+            const tiempoTotal = Math.round(endClient - startClient);
+
+            panel.innerHTML = `
+                <div class="metric-title">Estrategia</div>
+                <div style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #f1f5f9;">${data.tipo}</div>
+
+                <div class="metric-title">Tiempo en Servidor</div>
+                <div class="time-badge">${data.tiempoMs} ms</div>
+
+                <div class="detail-row">
+                    <span>Registros devueltos:</span>
+                    <strong>${data.totalRegistros.toLocaleString()}</strong>
+                </div>
+                <div class="detail-row">
+                    <span>Tiempo total (Red + Cliente):</span>
+                    <strong>${tiempoTotal} ms</strong>
+                </div>
+            `;
+        } catch (error) {
+            panel.innerHTML = `<p style="color: #ef4444;">Error al conectar con el backend. Asegúrate de que Spring Boot esté corriendo en el puerto 8080.</p>`;
+        }
+    }
+
+    async function limpiarCache() {
+        const panel = document.getElementById('panel-resultado');
+        try {
+            await fetch(`${API_URL}/limpiar-cache`, { method: 'POST' });
+            panel.innerHTML = `<p style="color: #10b981;">Caché limpiada con éxito en el servidor.</p>`;
+        } catch (e) {
+            panel.innerHTML = `<p style="color: #ef4444;">No se pudo invalidar la caché.</p>`;
+        }
+    }
+</script>
+</body>
+</html>
