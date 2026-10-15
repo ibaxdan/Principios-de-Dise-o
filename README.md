@@ -16,4 +16,4 @@ En el entorno de desarrollo se utilizó la anotación `@CrossOrigin(origins = "*
 1. Clonar el repositorio.
 2. Abrir en IntelliJ IDEA / VS Code.
 3. Ejecutar la clase `DemoApplication.java`.
-4. Ingresar desde el navegador a `http://localhost:8080/`.
+4. Ingresar desde el navegador a `http://localhost:8080/index.html`.
